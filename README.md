@@ -25,4 +25,3 @@ A modern Flutter OTP verification UI with smooth focus animation, loading border
 flutter pub get
 flutter run
 
-```txt
