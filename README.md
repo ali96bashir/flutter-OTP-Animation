@@ -1,17 +1,28 @@
-# otp_animation
+# Flutter OTP Verification Animation
 
-A new Flutter project.
+A modern Flutter OTP verification UI with smooth focus animation, loading border animation, merging boxes transition, and success screen.
 
-## Getting Started
+## Preview
 
-This project is a starting point for a Flutter application.
+![OTP Input](assets/otp_input.png)
 
-A few resources to get you started if this is your first Flutter project:
+![OTP Loading](assets/otp_loading.png)
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+![OTP Success](assets/otp_success.png)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Features
+
+- Orange border only on active OTP field
+- Auto focus between OTP fields
+- Animated loading border
+- Smooth merging animation
+- Success verification screen
+- Pure Flutter without packages
+
+## Run Project
+
+```bash
+flutter pub get
+flutter run
+
+```txt
