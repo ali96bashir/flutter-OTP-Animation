@@ -8,6 +8,7 @@ A modern Flutter OTP verification UI with smooth focus animation, loading border
   <img src="assets/demo.gif" width="260"/>
 </p>
 
+
 <br>
 
 <p align="center">
