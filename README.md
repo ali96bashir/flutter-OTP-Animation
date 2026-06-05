@@ -4,11 +4,11 @@ A modern Flutter OTP verification UI with smooth focus animation, loading border
 
 ## Preview
 
-![OTP Input](assets/otp_input.png)
-
-![OTP Loading](assets/otp_loading.png)
-
-![OTP Success](assets/otp_success.png)
+<p align="center">
+  <img src="assets/screenshots/otp_input.png" width="250"/>
+  <img src="assets/screenshots/otp_loading.png" width="250"/>
+  <img src="assets/screenshots/otp_success.png" width="250"/>
+</p>
 
 ## Features
 
