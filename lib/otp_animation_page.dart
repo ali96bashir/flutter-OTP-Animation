@@ -19,13 +19,17 @@ class _OtpVerificationPageState extends State<OtpVerificationPage>
 
   final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
 
+  static const String _correctCode = '1111';
+
   late AnimationController _loadingController;
   late AnimationController _mergeController;
   late AnimationController _successController;
   late AnimationController _cardBgController;
+  late AnimationController _errorController;
 
   bool _loading = false;
   bool _verified = false;
+  bool _error = false;
 
   @override
   void initState() {
@@ -51,6 +55,11 @@ class _OtpVerificationPageState extends State<OtpVerificationPage>
       duration: const Duration(milliseconds: 600),
     );
 
+    _errorController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 650),
+    );
+
     Future.delayed(const Duration(milliseconds: 300), () {
       _focusNodes[0].requestFocus();
     });
@@ -68,6 +77,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage>
     _mergeController.dispose();
     _successController.dispose();
     _cardBgController.dispose();
+    _errorController.dispose();
     super.dispose();
   }
 
@@ -99,12 +109,27 @@ class _OtpVerificationPageState extends State<OtpVerificationPage>
     _loadingController.stop();
     setState(() => _loading = false);
 
-    await _mergeController.forward();
-    await Future.delayed(const Duration(milliseconds: 50));
+    if (code == _correctCode) {
+      await _mergeController.forward();
+      await Future.delayed(const Duration(milliseconds: 50));
 
-    _cardBgController.forward();
-    setState(() => _verified = true);
-    _successController.forward();
+      _cardBgController.forward();
+      setState(() => _verified = true);
+      _successController.forward();
+    } else {
+      setState(() => _error = true);
+      await _errorController.forward(from: 0);
+      await Future.delayed(const Duration(milliseconds: 900));
+
+      if (!mounted) return;
+
+      for (final c in _controllers) {
+        c.clear();
+      }
+      _errorController.reset();
+      setState(() => _error = false);
+      _focusNodes[0].requestFocus();
+    }
   }
 
   void _reset() {
@@ -115,11 +140,13 @@ class _OtpVerificationPageState extends State<OtpVerificationPage>
     _loadingController.reset();
     _mergeController.reset();
     _successController.reset();
+    _errorController.reset();
     _cardBgController.reverse();
 
     setState(() {
       _loading = false;
       _verified = false;
+      _error = false;
     });
 
     Future.delayed(const Duration(milliseconds: 150), () {
@@ -150,9 +177,11 @@ class _OtpVerificationPageState extends State<OtpVerificationPage>
                   BoxShadow(
                     color: _verified
                         ? Colors.greenAccent.withOpacity(0.25)
+                        : _error
+                        ? Colors.redAccent.withOpacity(0.22)
                         : Colors.black.withOpacity(0.25),
-                    blurRadius: _verified ? 80 : 35,
-                    spreadRadius: _verified ? 12 : 2,
+                    blurRadius: _verified ? 80 : (_error ? 60 : 35),
+                    spreadRadius: _verified ? 12 : (_error ? 6 : 2),
                   ),
                 ],
               ),
@@ -179,7 +208,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage>
                         children: [
                           AnimatedOpacity(
                             duration: const Duration(milliseconds: 250),
-                            opacity: _verified ? 0.0 : 1.0,
+                            opacity: (_verified || _error) ? 0.0 : 1.0,
                             child: AnimatedSlide(
                               duration: const Duration(milliseconds: 250),
                               offset: _verified
@@ -258,6 +287,40 @@ class _OtpVerificationPageState extends State<OtpVerificationPage>
                               );
                             },
                           ),
+                          AnimatedOpacity(
+                            duration: const Duration(milliseconds: 200),
+                            opacity: _error ? 1.0 : 0.0,
+                            child: AnimatedSlide(
+                              duration: const Duration(milliseconds: 200),
+                              offset: _error
+                                  ? Offset.zero
+                                  : const Offset(0, -0.2),
+                              child: const Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    "الرمز غير صحيح",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Color(0xffff5252),
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    "الرمز الذي أدخلته غير صحيح.\nيرجى المحاولة مرة أخرى.",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.white38,
+                                      fontSize: 13,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -271,11 +334,16 @@ class _OtpVerificationPageState extends State<OtpVerificationPage>
                         animation: Listenable.merge([
                           _mergeController,
                           _successController,
+                          _errorController,
                         ]),
                         builder: (context, child) {
                           final t = Curves.easeInQuad.transform(
                             _mergeController.value,
                           );
+
+                          final shakeT = _errorController.value;
+                          final shakeX =
+                              sin(shakeT * pi * 7) * 10 * (1 - shakeT);
                           final blurValue = _verified
                               ? (1 - _successController.value) * 14.0
                               : (t * 14.0).clamp(0.0, 14.0);
@@ -287,7 +355,9 @@ class _OtpVerificationPageState extends State<OtpVerificationPage>
                               ).evaluate(_cardBgController) ??
                               const Color(0xffff8a3d);
 
-                          return Stack(
+                          return Transform.translate(
+                            offset: Offset(shakeX, 0),
+                            child: Stack(
                             alignment: Alignment.center,
                             children: [
                               ColorFiltered(
@@ -415,6 +485,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage>
                                                       loadingController:
                                                           _loadingController,
                                                       isLoading: _loading,
+                                                      isError: _error,
                                                       index: index,
                                                       onChanged: (v) =>
                                                           _onChanged(v, index),
@@ -454,6 +525,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage>
                                   },
                                 ),
                             ],
+                            ),
                           );
                         },
                       ),
@@ -488,6 +560,7 @@ class _OtpCell extends StatefulWidget {
   final FocusNode focusNode;
   final AnimationController loadingController;
   final bool isLoading;
+  final bool isError;
   final int index;
   final ValueChanged<String> onChanged;
 
@@ -496,6 +569,7 @@ class _OtpCell extends StatefulWidget {
     required this.focusNode,
     required this.loadingController,
     required this.isLoading,
+    required this.isError,
     required this.index,
     required this.onChanged,
   });
@@ -566,11 +640,15 @@ class _OtpCellState extends State<_OtpCell>
               width: 62,
               height: 62,
               decoration: BoxDecoration(
-                color: const Color(0xff1e1e22),
+                color: widget.isError
+                    ? const Color(0xff2a1518)
+                    : const Color(0xff1e1e22),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   width: 2,
-                  color: _focused && !widget.isLoading
+                  color: widget.isError
+                      ? const Color(0xffff5252)
+                      : _focused && !widget.isLoading
                       ? orangeColor
                       : Colors.white10,
                 ),
